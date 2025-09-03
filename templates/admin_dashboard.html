@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Admin Dashboard</title>
+  <style>
+  body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    padding: 2rem;
+    background: linear-gradient(135deg, #e0f7fa, #f1f8e9);
+    color: #333;
+  }
+
+  h1 {
+    color: #2c3e50;
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+  }
+
+  h2, h4 {
+    color: #34495e;
+    margin-top: 1.5rem;
+  }
+
+  .exam-section {
+    background: #ffffff;
+    padding: 1.5rem;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    margin-bottom: 2rem;
+    border-left: 6px solid #00acc1;
+  }
+
+  label {
+    display: inline-block;
+    margin-right: 1rem;
+    margin-top: 1rem;
+    font-weight: bold;
+    color: #1a237e;
+  }
+
+  input[type="number"] {
+    padding: 0.5rem;
+    margin-right: 1rem;
+    border-radius: 6px;
+    border: 1px solid #90caf9;
+    background-color: #e3f2fd;
+  }
+
+  input[type="checkbox"] {
+    margin-right: 0.5rem;
+    transform: scale(1.2);
+  }
+
+  button {
+    padding: 0.6rem 1.2rem;
+    background-color: #00bcd4;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+  }
+
+  button:hover {
+    background-color: #008ba3;
+  }
+
+  .alert-box {
+    background: #ffe0e0;
+    border-left: 5px solid #e53935;
+    padding: 0.7rem 1rem;
+    margin: 0.5rem 0;
+    border-radius: 5px;
+    color: #c62828;
+    font-weight: 500;
+  }
+
+  .link {
+    color: #1565c0;
+    text-decoration: none;
+    font-weight: 500;
+  }
+
+  .link:hover {
+    text-decoration: underline;
+    color: #0d47a1;
+  }
+
+  .token {
+    font-family: 'Courier New', Courier, monospace;
+    background: #e0f2f1;
+    padding: 0.3rem 0.6rem;
+    border-radius: 4px;
+    color: #00695c;
+    font-weight: bold;
+  }
+
+  ul {
+    padding-left: 1.2rem;
+  }
+
+  ul li {
+    margin: 0.3rem 0;
+  }
+
+  em {
+    color: #666;
+  }
+</style>
+
+</head>
+<body>
+  <h1>Admin Dashboard</h1>
+
+  <form method="POST">
+    <label>Exam Duration (minutes):</label>
+    <input type="number" name="duration" required min="1">
+    <label>
+      <input type="checkbox" name="sdr"> Enable SDR
+    </label>
+    <button type="submit">Generate Exam</button>
+  </form>
+
+  {% if token %}
+    <div class="exam-section">
+      <h2>Generated Exam Link</h2>
+      <p>Share this link with the student to take the exam:</p>
+      <p>
+        <a class="link" href="{{ url_for('exam_page', token=token, _external=True) }}" target="_blank">
+          {{ url_for('exam_page', token=token, _external=True) }}
+        </a>
+      </p>
+    </div>
+  {% endif %}
+
+  <h2>Active Exam Sessions</h2>
+
+  {% for token, session in sessions.items() %}
+    <div class="exam-section">
+      <p><strong>Token:</strong> <span class="token">{{ token }}</span></p>
+      <p><strong>Duration:</strong> {{ session.duration }} minutes</p>
+      <p><strong>SDR:</strong> {{ 'Enabled' if session.sdr else 'Disabled' }}</p>
+
+      <p><strong>Exam Link:</strong>
+        <a class="link" href="{{ url_for('exam_page', token=token, _external=True) }}" target="_blank">
+          {{ url_for('exam_page', token=token, _external=True) }}
+        </a>
+      </p>
+
+      <p>
+        <a class="link" href="/create_question/{{ token }}">➕ Add Questions</a>
+      </p>
+
+      {% if session.students %}
+  <h4>Submitted Reports:</h4>
+  <ul>
+    {% for student in session.students if student.status == 'Submitted' %}
+      <li>
+        <a class="link" href="/view_report/{{ token }}?email={{ student.email }}">
+          {{ student.name }} ({{ student.email }})
+        </a>
+      </li>
+    {% endfor %}
+  </ul>
+{% endif %}
+
+
+      <h4>Live Alerts:</h4>
+      <div id="alerts-{{ token }}">
+        <em>Waiting for alerts...</em>
+      </div>
+    </div>
+  {% endfor %}
+
+  <script>
+    function fetchAlerts(token) {
+      fetch(`/alerts/${token}`)
+        .then(response => response.json())
+        .then(data => {
+          const container = document.getElementById(`alerts-${token}`);
+          if (data.alerts.length === 0) {
+            container.innerHTML = '<em>No alerts yet</em>';
+          } else {
+            container.innerHTML = '';
+            data.alerts.forEach(alert => {
+              const div = document.createElement('div');
+              div.className = 'alert-box';
+              div.textContent = alert;
+              container.appendChild(div);
+            });
+          }
+        })
+        .catch(err => {
+          console.error('Error fetching alerts:', err);
+        });
+    }
+
+    {% for token in sessions.keys() %}
+      setInterval(() => fetchAlerts('{{ token }}'), 5000);
+      fetchAlerts('{{ token }}');
+    {% endfor %}
+  </script>
+</body>
+</html>

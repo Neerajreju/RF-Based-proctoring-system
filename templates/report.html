@@ -1,0 +1,258 @@
+<!-- 
+
+
+ <h2>Report for {{ student.name }} ({{ student.email }})</h2>
+
+<style>
+  body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    padding: 2rem;
+    background: linear-gradient(135deg, #f3f9ff, #e0f7fa);
+    color: #333;
+  }
+
+  h2 {
+    color: #2c3e50;
+    margin-bottom: 0.5rem;
+  }
+
+  #score-summary {
+    font-size: 1.1rem;
+    font-weight: bold;
+    color: #00695c;
+    margin-bottom: 2rem;
+  }
+
+  .question-card {
+    background-color: #ffffff;
+    border-left: 6px solid #64b5f6;
+    padding: 1.2rem;
+    border-radius: 10px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+    margin-bottom: 1.5rem;
+  }
+
+  .question-card strong {
+    font-size: 1.1rem;
+    color: #1a237e;
+  }
+
+  .question-card span {
+    display: block;
+    margin-top: 0.3rem;
+    font-size: 1rem;
+  }
+
+  .correct {
+    color: green;
+    font-weight: bold;
+  }
+
+  .incorrect {
+    color: red;
+    font-weight: bold;
+  }
+
+  .pdf-btn {
+    background-color: #00bcd4;
+    color: white;
+    padding: 0.6rem 1.2rem;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: bold;
+    margin-bottom: 2rem;
+  }
+
+  .pdf-btn:hover {
+    background-color: #008ba3;
+  }
+</style>
+
+<div id="score-summary">
+  Score: {{ report | selectattr('correct') | list | length }} / {{ report | length }} Correct
+</div>
+
+<button class="pdf-btn" onclick="downloadPDF()">📄 Download PDF</button>
+
+<div id="report-content">
+  {% for r in report %}
+    <div class="question-card">
+      <strong>{{ loop.index }}. {{ r.question }}</strong>
+      <span>Your Answer: {{ r.answer }}</span>
+      <span>Expected: {{ r.expected }}</span>
+      <span class="{{ 'correct' if r.correct else 'incorrect' }}">
+        {{ '✅ Correct' if r.correct else '❌ Incorrect' }}
+      </span>
+    </div>
+  {% endfor %}
+</div>
+
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script>
+  function downloadPDF() {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    const content = document.getElementById("report-content").innerText;
+    const name = "{{ student.name|replace(' ', '_') }}";
+
+    doc.setFont("helvetica", "normal");
+    doc.text("Report for {{ student.name }} ({{ student.email }})", 10, 10);
+    doc.text("{{ 'Score: ' + (report | selectattr('correct') | list | length|string) + ' / ' + (report | length|string) + ' Correct' }}", 10, 20);
+    doc.text(content, 10, 30, { maxWidth: 180 });
+
+    doc.save(`${name}_report.pdf`);
+  }
+</script> -->
+<h2>Report for {{ student.name }} ({{ student.email }})</h2>
+
+<style>
+  body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    padding: 2rem;
+    background: linear-gradient(135deg, #f3f9ff, #e0f7fa);
+    color: #333;
+  }
+
+  h2 {
+    color: #2c3e50;
+    margin-bottom: 0.5rem;
+  }
+
+  #score-summary {
+    font-size: 1.1rem;
+    font-weight: bold;
+    color: #00695c;
+    margin-bottom: 2rem;
+  }
+
+  .question-card, .alert-card {
+    background-color: #ffffff;
+    padding: 1.2rem;
+    border-radius: 10px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+    margin-bottom: 1.5rem;
+  }
+
+  .question-card {
+    border-left: 6px solid #64b5f6;
+  }
+
+  .alert-card {
+    border-left: 6px solid #e53935;
+  }
+
+  .question-card strong, .alert-card strong {
+    font-size: 1.1rem;
+    color: #1a237e;
+  }
+
+  .question-card span {
+    display: block;
+    margin-top: 0.3rem;
+    font-size: 1rem;
+  }
+
+  .correct {
+    color: green;
+    font-weight: bold;
+  }
+
+  .incorrect {
+    color: red;
+    font-weight: bold;
+  }
+
+  .pdf-btn {
+    background-color: #00bcd4;
+    color: white;
+    padding: 0.6rem 1.2rem;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: bold;
+    margin-bottom: 2rem;
+  }
+
+  .pdf-btn:hover {
+    background-color: #008ba3;
+  }
+
+  .alert-heading {
+    color: #d32f2f;
+    font-size: 1.2rem;
+    margin-top: 2rem;
+  }
+</style>
+
+<div id="score-summary">
+  Score: {{ report | selectattr('correct') | list | length }} / {{ report | length }} Correct
+</div>
+
+<button class="pdf-btn" onclick="downloadPDF()">📄 Download PDF</button>
+
+<div id="report-content">
+  {% for r in report %}
+    <div class="question-card">
+      <strong>{{ loop.index }}. {{ r.question }}</strong>
+      <span>Your Answer: {{ r.answer }}</span>
+      <span>Expected: {{ r.expected }}</span>
+      <span class="{{ 'correct' if r.correct else 'incorrect' }}">
+        {{ '✅ Correct' if r.correct else '❌ Incorrect' }}
+      </span>
+    </div>
+  {% endfor %}
+
+  <div class="alert-heading">⚠️ Proctoring Alerts</div>
+  {% if alerts %}
+    {% for a in alerts %}
+      <div class="alert-card">
+        <strong>{{ loop.index }}.</strong> {{ a }}
+      </div>
+    {% endfor %}
+  {% else %}
+    <p style="color: green; font-weight: bold;">No suspicious activity detected during the exam.</p>
+  {% endif %}
+</div>
+
+<!-- PDF Download Script -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script>
+  function downloadPDF() {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    const name = "{{ student.name|replace(' ', '_') }}";
+
+    let y = 10;
+    doc.setFont("helvetica", "bold");
+    doc.text(`Report for {{ student.name }} ({{ student.email }})`, 10, y);
+    y += 10;
+    doc.setFont("helvetica", "normal");
+    doc.text(`Score: {{ report | selectattr('correct') | list | length }} / {{ report | length }} Correct`, 10, y);
+    y += 10;
+
+    {% for r in report %}
+      doc.text("Q{{ loop.index }}: {{ r.question }}", 10, y); y += 7;
+      doc.text("Your Answer: {{ r.answer }}", 12, y); y += 7;
+      doc.text("Expected: {{ r.expected }}", 12, y); y += 7;
+      doc.text("Result: {{ 'Correct' if r.correct else 'Incorrect' }}", 12, y); y += 10;
+    {% endfor %}
+
+    doc.setFont("helvetica", "bold");
+    doc.text("Proctoring Alerts", 10, y); y += 10;
+    doc.setFont("helvetica", "normal");
+
+    {% if alerts %}
+      {% for a in alerts %}
+        doc.text("⚠️ {{ a }}", 10, y);
+        y += 8;
+        if (y > 270) { doc.addPage(); y = 10; }
+      {% endfor %}
+    {% else %}
+      doc.text("No suspicious activity detected.", 10, y);
+    {% endif %}
+
+    doc.save(`${name}_report.pdf`);
+  }
+</script>

@@ -1,0 +1,296 @@
+<!-- <!DOCTYPE html>
+<html>
+<head>
+    <title>Exam Page</title>
+    <script>
+        let timeLeft = {{ duration | tojson }} * 60;  // Convert to seconds
+
+        // Timer update function
+        function updateTimer() {
+            const minutes = Math.floor(timeLeft / 60);
+            const seconds = timeLeft % 60;
+            document.getElementById("timer").innerText = minutes + "m " + seconds + "s";
+            if (timeLeft > 0 && !examEnded) {
+                timeLeft--;
+                setTimeout(updateTimer, 1000);
+            } else if (timeLeft === 0 && !examEnded) {
+                alert("Time's up! Submitting exam...");
+                submitExam();
+            }
+        }
+
+        let examEnded = false;
+
+        // Handle "Submit Exam" button
+        function submitExam() {
+            examEnded = true;
+            fetch("/submit_exam", {
+                method: "POST",
+                body: JSON.stringify({
+                    token: "{{ token }}", 
+                    student_name: "{{ session['name'] }}",
+                    student_email: "{{ session['email'] }}",
+                }),
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                alert("Exam submitted successfully!");
+                window.location.href = "/exam_completed";  // Redirect after submission
+            });
+        }
+
+        window.onload = updateTimer;  // Start the timer when the page loads
+
+        // Tab switch detection
+        document.addEventListener("visibilitychange", function() {
+            if (document.hidden) {
+                fetch("/send_alert", {
+                    method: "POST",
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        token: "{{ token }}",
+                        alert: "Tab switch detected by student."
+                    })
+                });
+                alert("Tab switch is not allowed!");
+            }
+        });
+
+        window.onblur = () => {
+            fetch("/send_alert", {
+                method: "POST",
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    token: "{{ token }}",
+                    alert: "Window focus lost."
+                })
+            });
+            alert("Switching window/tab is not allowed!");
+        };
+
+        // Prevent right-click, copying, and other tricks
+        document.addEventListener("contextmenu", e => e.preventDefault());
+    </script>
+</head>
+<body>
+    <h2>Online Exam</h2>
+    <p>Time Left: <span id="timer"></span></p>
+
+    <form method="POST" action="/submit_answers/{{ token }}">
+        {% for q in questions %}
+            <div style="margin-bottom: 1em;">
+                <strong>{{ loop.index }}. {{ q.question }}</strong><br>
+                {% if q.type == 'mcq' %}
+                    {% for opt in q.options %}
+                        <input type="radio" name="{{ q.question }}" value="{{ opt }}" required> {{ opt }}<br>
+                    {% endfor %}
+                {% else %}
+                    <input type="text" name="{{ q.question }}" required style="width: 300px;"><br>
+                {% endif %}
+            </div>
+        {% endfor %}
+        <button type="submit">Submit Exam</button>
+    </form>
+</body>
+
+</html> -->
+<!-- newewewew -->
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Online Exam</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f8fc;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 40px auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            padding: 40px;
+        }
+
+        h2 {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 30px;
+        }
+
+        #timer {
+            font-weight: bold;
+            font-size: 18px;
+            color: #e74c3c;
+            float: right;
+        }
+
+        .question {
+            margin-bottom: 25px;
+        }
+
+        .question strong {
+            font-size: 17px;
+            color: #34495e;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            margin-top: 10px;
+        }
+
+        input[type="radio"] {
+            margin-right: 8px;
+        }
+
+        label {
+            display: block;
+            margin: 5px 0;
+            color: #2c3e50;
+        }
+
+        button[type="submit"] {
+            background-color: #2ecc71;
+            color: white;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-top: 20px;
+            width: 100%;
+        }
+
+        button[type="submit"]:hover {
+            background-color: #27ae60;
+        }
+
+        .timer-section {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+    </style>
+
+    <script>
+        let timeLeft = {{ duration | tojson }} * 60;
+        let examEnded = false;
+
+        function updateTimer() {
+            const minutes = Math.floor(timeLeft / 60);
+            const seconds = timeLeft % 60;
+            document.getElementById("timer").innerText = minutes + "m " + seconds + "s";
+
+            if (timeLeft > 0 && !examEnded) {
+                timeLeft--;
+                setTimeout(updateTimer, 1000);
+            } else if (timeLeft === 0 && !examEnded) {
+                alert("Time's up! Submitting exam...");
+                submitExam();
+            }
+        }
+
+        function submitExam() {
+            examEnded = true;
+            fetch("/auto_submit_exam", {
+                method: "POST",
+                body: JSON.stringify({
+                    token: "{{ token }}",
+                    student_name: "{{ session['name'] }}",
+                    student_email: "{{ session['email'] }}",
+                    answers: getAnswers()
+                }),
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                alert("Exam submitted successfully!");
+                window.location.href = "/view_report/{{ token }}/{{ session['email'] }}";
+            });
+        }
+
+        function getAnswers() {
+            const inputs = document.querySelectorAll("input");
+            const answers = {};
+            inputs.forEach(input => {
+                if ((input.type === "radio" && input.checked) || input.type === "text") {
+                    answers[input.name] = input.value;
+                }
+            });
+            return answers;
+        }
+
+        // Tab switch detection
+        document.addEventListener("visibilitychange", function () {
+            if (document.hidden) {
+                sendAlert("Tab switch detected by student.");
+                alert("Tab switch is not allowed!");
+            }
+        });
+
+        window.onblur = () => {
+            sendAlert("Window focus lost.");
+            alert("Switching window/tab is not allowed!");
+        };
+
+        function sendAlert(alertMsg) {
+            fetch("/send_alert", {
+                method: "POST",
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    token: "{{ token }}",
+                    alert: alertMsg
+                })
+            });
+        }
+
+        document.addEventListener("contextmenu", e => e.preventDefault());
+
+        window.onload = updateTimer;
+    </script>
+</head>
+
+<body>
+    <div class="container">
+        <div class="timer-section">
+            <h2>Online Exam</h2>
+            <span id="timer"></span>
+        </div>
+
+        <form method="POST" action="/submit_answers/{{ token }}">
+            {% for q in questions %}
+                <div class="question">
+                    <strong>{{ loop.index }}. {{ q.question }}</strong>
+                    {% if q.type == 'mcq' %}
+                        {% for opt in q.options %}
+                            <label>
+                                <input type="radio" name="{{ q.question }}" value="{{ opt }}" required>
+                                {{ opt }}
+                            </label>
+                        {% endfor %}
+                    {% else %}
+                        <input type="text" name="{{ q.question }}" required>
+                    {% endif %}
+                </div>
+            {% endfor %}
+            <button type="submit">Submit Exam</button>
+        </form>
+    </div>
+</body>
+</html>
